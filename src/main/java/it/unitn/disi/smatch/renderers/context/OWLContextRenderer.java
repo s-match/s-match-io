@@ -1,11 +1,10 @@
 package it.unitn.disi.smatch.renderers.context;
 
-import it.unitn.disi.common.components.ConfigurableException;
-import it.unitn.disi.common.components.ConfigurationKeyMissingException;
 import it.unitn.disi.smatch.data.trees.IContext;
 import it.unitn.disi.smatch.data.trees.INode;
 import it.unitn.disi.smatch.data.trees.INodeData;
 import it.unitn.disi.smatch.data.trees.Node;
+import it.unitn.disi.smatch.data.util.ProgressContainer;
 import it.unitn.disi.smatch.loaders.ILoader;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -21,7 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Properties;
 
 /**
  * Renders a context into an OWL file. Created for OAEI webdirs track export, therefore takes into account
@@ -35,24 +33,20 @@ import java.util.Properties;
  */
 public class OWLContextRenderer extends BaseXMLContextRenderer<IContext> {
 
-    private final static String DATASET_URI_KEY = "datasetURI";
-    private String datasetURI;
+    private final String datasetURI;
 
-    @Override
-    public boolean setProperties(Properties newProperties) throws ConfigurableException {
-        boolean result = super.setProperties(newProperties);
-        if (result) {
-            if (newProperties.containsKey(DATASET_URI_KEY)) {
-                datasetURI = newProperties.getProperty(DATASET_URI_KEY);
-            } else {
-                throw new ConfigurationKeyMissingException(DATASET_URI_KEY);
-            }
-        }
-        return result;
+    public OWLContextRenderer(String datasetURI) {
+        super();
+        this.datasetURI = datasetURI;
+    }
+
+    public OWLContextRenderer(boolean sort, String datasetURI) {
+        super(sort);
+        this.datasetURI = datasetURI;
     }
 
     @Override
-    protected void process(IContext context, BufferedWriter out) throws IOException, ContextRendererException {
+    protected void process(IContext context, BufferedWriter out, ProgressContainer progressContainer) throws IOException, ContextRendererException {
         try {
             StreamResult streamResult = new StreamResult(out);
             SAXTransformerFactory tf = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
@@ -92,18 +86,16 @@ public class OWLContextRenderer extends BaseXMLContextRenderer<IContext> {
             renderString(hd, new AttributesImpl(), "dc:creator", "S-Match");
             hd.endElement("", "", "owl:Ontology");
 
-            renderNode(hd, context.getRoot());
+            renderNode(hd, context.getRoot(), progressContainer);
 
             hd.endElement("", "", "rdf:RDF");
             hd.endDocument();
-        } catch (SAXException e) {
-            throw new ContextRendererException(e.getClass().getSimpleName() + ": " + e.getMessage(), e);
-        } catch (TransformerConfigurationException e) {
+        } catch (SAXException | TransformerConfigurationException e) {
             throw new ContextRendererException(e.getClass().getSimpleName() + ": " + e.getMessage(), e);
         }
     }
 
-    private void renderNode(TransformerHandler hd, INode curNode) throws SAXException {
+    private void renderNode(TransformerHandler hd, INode curNode, ProgressContainer progressContainer) throws SAXException {
         // render current node
         INodeData curNodeData = curNode.getNodeData();
         AttributesImpl atts = new AttributesImpl();
@@ -122,18 +114,18 @@ public class OWLContextRenderer extends BaseXMLContextRenderer<IContext> {
         if (0 < curNode.getChildCount()) {
             Iterator<INode> children;
             if (sort) {
-                ArrayList<INode> childrenList = new ArrayList<INode>(curNode.getChildrenList());
+                ArrayList<INode> childrenList = new ArrayList<>(curNode.getChildrenList());
                 Collections.sort(childrenList, Node.NODE_NAME_COMPARATOR);
                 children = childrenList.iterator();
             } else {
                 children = curNode.getChildren();
             }
             while (children.hasNext()) {
-                renderNode(hd, children.next());
+                renderNode(hd, children.next(), progressContainer);
             }
         }
 
-        reportProgress();
+        progressContainer.progress();
     }
 
     public String getDescription() {

@@ -17,9 +17,17 @@ import java.util.Iterator;
  *
  * @author <a rel="author" href="http://autayeu.com/">Aliaksandr Autayeu</a>
  */
-public class SimpleXMLContextRenderer extends BaseSimpleXMLContextRenderer<IContext> implements IContextRenderer{
+public class SimpleXMLContextRenderer extends BaseXMLContextRenderer<IContext> implements IContextRenderer {
 
     private final static String preprocessedFlag = Boolean.toString(true);
+
+    public SimpleXMLContextRenderer() {
+        super();
+    }
+
+    public SimpleXMLContextRenderer(boolean sort) {
+        super(sort);
+    }
 
     protected void renderNodeAttributes(IBaseNode curNode, AttributesImpl atts) {
         INodeData curNodeData = ((INode) curNode).getNodeData();

@@ -3,6 +3,7 @@ package it.unitn.disi.smatch.renderers.mapping;
 import it.unitn.disi.smatch.data.mappings.IContextMapping;
 import it.unitn.disi.smatch.data.mappings.IMappingElement;
 import it.unitn.disi.smatch.data.trees.INode;
+import it.unitn.disi.smatch.data.util.MappingProgressContainer;
 import it.unitn.disi.smatch.loaders.ILoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +30,7 @@ public class SimpleXMLMappingRenderer extends BaseFileMappingRenderer {
     private static final Logger log = LoggerFactory.getLogger(SimpleXMLMappingRenderer.class);
 
     @Override
-    protected void process(IContextMapping<INode> mapping, BufferedWriter out) throws IOException, MappingRendererException {
+    protected void process(IContextMapping<INode> mapping, BufferedWriter out, MappingProgressContainer progressContainer) throws IOException, MappingRendererException {
         try {
             StreamResult streamResult = new StreamResult(out);
             SAXTransformerFactory tf = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
@@ -58,20 +59,18 @@ public class SimpleXMLMappingRenderer extends BaseFileMappingRenderer {
                     hd.startElement("", "", "link", atts);
                     hd.endElement("", "", "link");
 
-                    countRelation(relation);
+                    progressContainer.countRelation(relation);
                 } else {
                     if (log.isWarnEnabled()) {
                         log.warn("Source or Target node ID absent for mapping element: " + mappingElement);
                     }
                 }
-                reportProgress();
+                progressContainer.progress();
             }
 
             hd.endElement("", "", "mapping");
             hd.endDocument();
-        } catch (SAXException e) {
-            throw new MappingRendererException(e.getClass().getSimpleName() + ": " + e.getMessage(), e);
-        } catch (TransformerConfigurationException e) {
+        } catch (SAXException | TransformerConfigurationException e) {
             throw new MappingRendererException(e.getClass().getSimpleName() + ": " + e.getMessage(), e);
         }
     }

@@ -4,8 +4,9 @@ import it.unitn.disi.smatch.SMatchConstants;
 import it.unitn.disi.smatch.data.trees.IContext;
 import it.unitn.disi.smatch.data.trees.INode;
 import it.unitn.disi.smatch.data.trees.Node;
-import org.slf4j.LoggerFactory;
+import it.unitn.disi.smatch.oracles.ILinguisticOracle;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,8 +28,12 @@ public class SimpleXMLDeDupContextLoader extends SimpleXMLContextLoader {
     private long total;
     private long reportInt;
 
-    public SimpleXMLDeDupContextLoader() throws ContextLoaderException {
-        super();
+    public SimpleXMLDeDupContextLoader(ILinguisticOracle linguisticOracle) throws ContextLoaderException {
+        super(linguisticOracle);
+    }
+
+    public SimpleXMLDeDupContextLoader(boolean uniqueStrings, ILinguisticOracle linguisticOracle) throws ContextLoaderException {
+        super(uniqueStrings, linguisticOracle);
     }
 
     @Override
@@ -44,7 +49,7 @@ public class SimpleXMLDeDupContextLoader extends SimpleXMLContextLoader {
             total = result.getNodesList().size();
             reportInt = (total / 20) + 1;//i.e. report every 5%
 
-            ArrayList<INode> nodeQ = new ArrayList<INode>();
+            ArrayList<INode> nodeQ = new ArrayList<>();
             nodeQ.add(result.getRoot());
             INode curNode;
             while (!nodeQ.isEmpty()) {
@@ -52,7 +57,7 @@ public class SimpleXMLDeDupContextLoader extends SimpleXMLContextLoader {
                 if (null == curNode) {
                     //go up
                 } else {
-                    List<INode> children = new ArrayList<INode>(curNode.getChildrenList());
+                    List<INode> children = new ArrayList<>(curNode.getChildrenList());
                     Collections.sort(children, Node.NODE_NAME_COMPARATOR);
                     int idx = 1;
                     while (idx < children.size()) {
@@ -93,7 +98,7 @@ public class SimpleXMLDeDupContextLoader extends SimpleXMLContextLoader {
      * @param target target node
      */
     private void moveChildren(INode source, INode target) {
-        List<INode> children = new ArrayList<INode>(source.getChildrenList());
+        List<INode> children = new ArrayList<>(source.getChildrenList());
         while (0 < children.size()) {
             INode child = children.remove(0);
             int idx = target.getChildIndex(child);

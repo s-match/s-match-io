@@ -1,9 +1,9 @@
 package it.unitn.disi.smatch.renderers.mapping;
 
+import it.unitn.disi.smatch.async.AsyncTask;
 import it.unitn.disi.smatch.data.mappings.IContextMapping;
 import it.unitn.disi.smatch.data.mappings.IMappingElement;
 import it.unitn.disi.smatch.data.trees.INode;
-import it.unitn.disi.smatch.data.util.MappingProgressContainer;
 import it.unitn.disi.smatch.loaders.ILoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,18 +19,30 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.BufferedWriter;
 import java.io.IOException;
 
-
 /**
  * Renders the mapping in a Simple XML file.
  *
  * @author <a rel="author" href="http://autayeu.com/">Aliaksandr Autayeu</a>
  */
-public class SimpleXMLMappingRenderer extends BaseFileMappingRenderer {
+public class SimpleXMLMappingRenderer extends BaseFileMappingRenderer implements IAsyncMappingRenderer {
 
     private static final Logger log = LoggerFactory.getLogger(SimpleXMLMappingRenderer.class);
 
+    public SimpleXMLMappingRenderer() {
+        super(null, null);
+    }
+
+    public SimpleXMLMappingRenderer(String location, IContextMapping<INode> mapping) {
+        super(location, mapping);
+    }
+
     @Override
-    protected void process(IContextMapping<INode> mapping, BufferedWriter out, MappingProgressContainer progressContainer) throws IOException, MappingRendererException {
+    public AsyncTask<Void, IMappingElement<INode>> asyncRender(IContextMapping<INode> mapping, String location) {
+        return new SimpleXMLMappingRenderer(location, mapping);
+    }
+
+    @Override
+    protected void process(IContextMapping<INode> mapping, BufferedWriter out) throws IOException, MappingRendererException {
         try {
             StreamResult streamResult = new StreamResult(out);
             SAXTransformerFactory tf = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
@@ -46,6 +58,10 @@ public class SimpleXMLMappingRenderer extends BaseFileMappingRenderer {
             hd.startElement("", "", "mapping", atts);
 
             for (IMappingElement<INode> mappingElement : mapping) {
+                if (Thread.currentThread().isInterrupted()) {
+                    break;
+                }
+
                 String sourceConceptId = mappingElement.getSource().getNodeData().getId();
                 String targetConceptId = mappingElement.getTarget().getNodeData().getId();
                 if (null != sourceConceptId && 0 < sourceConceptId.length() && null != targetConceptId && 0 < targetConceptId.length()) {
@@ -58,14 +74,12 @@ public class SimpleXMLMappingRenderer extends BaseFileMappingRenderer {
                     atts.addAttribute("", "", "relation", "CDATA", Character.toString(relation));
                     hd.startElement("", "", "link", atts);
                     hd.endElement("", "", "link");
-
-                    progressContainer.countRelation(relation);
                 } else {
                     if (log.isWarnEnabled()) {
                         log.warn("Source or Target node ID absent for mapping element: " + mappingElement);
                     }
                 }
-                progressContainer.progress();
+                progress();
             }
 
             hd.endElement("", "", "mapping");

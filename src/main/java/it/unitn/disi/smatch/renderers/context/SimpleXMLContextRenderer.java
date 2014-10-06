@@ -1,5 +1,6 @@
 package it.unitn.disi.smatch.renderers.context;
 
+import it.unitn.disi.smatch.async.AsyncTask;
 import it.unitn.disi.smatch.data.ling.IAtomicConceptOfLabel;
 import it.unitn.disi.smatch.data.ling.ISense;
 import it.unitn.disi.smatch.data.trees.IBaseNode;
@@ -17,7 +18,7 @@ import java.util.Iterator;
  *
  * @author <a rel="author" href="http://autayeu.com/">Aliaksandr Autayeu</a>
  */
-public class SimpleXMLContextRenderer extends BaseXMLContextRenderer<IContext> implements IContextRenderer {
+public class SimpleXMLContextRenderer extends BaseXMLContextRenderer<IContext, INode> implements IContextRenderer, IAsyncContextRenderer {
 
     private final static String preprocessedFlag = Boolean.toString(true);
 
@@ -27,6 +28,14 @@ public class SimpleXMLContextRenderer extends BaseXMLContextRenderer<IContext> i
 
     public SimpleXMLContextRenderer(boolean sort) {
         super(sort);
+    }
+
+    public SimpleXMLContextRenderer(String location, IContext context) {
+        super(location, context);
+    }
+
+    public SimpleXMLContextRenderer(String location, IContext context, boolean sort) {
+        super(location, context, sort);
     }
 
     protected void renderNodeAttributes(IBaseNode curNode, AttributesImpl atts) {
@@ -70,4 +79,8 @@ public class SimpleXMLContextRenderer extends BaseXMLContextRenderer<IContext> i
         }
     }
 
+    @Override
+    public AsyncTask<Void, INode> asyncRender(IContext context, String location) {
+        return new SimpleXMLContextRenderer(location, context, sort);
+    }
 }

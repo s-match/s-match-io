@@ -4,7 +4,6 @@ import it.unitn.disi.smatch.data.trees.IBaseContext;
 import it.unitn.disi.smatch.data.trees.IBaseNode;
 import it.unitn.disi.smatch.data.trees.IBaseNodeData;
 import it.unitn.disi.smatch.data.trees.Node;
-import it.unitn.disi.smatch.data.util.ProgressContainer;
 import it.unitn.disi.smatch.loaders.ILoader;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -26,7 +25,7 @@ import java.util.Iterator;
  *
  * @author <a rel="author" href="http://autayeu.com/">Aliaksandr Autayeu</a>
  */
-public abstract class BaseXMLContextRenderer<E extends IBaseContext<? extends IBaseNode>> extends BaseFileContextRenderer<E> implements IBaseContextRenderer<E> {
+public abstract class BaseXMLContextRenderer<E extends IBaseContext<T>, T extends IBaseNode> extends BaseFileContextRenderer<E, T> implements IBaseContextRenderer<E, T> {
 
     protected BaseXMLContextRenderer() {
         super();
@@ -34,6 +33,14 @@ public abstract class BaseXMLContextRenderer<E extends IBaseContext<? extends IB
 
     protected BaseXMLContextRenderer(boolean sort) {
         super(sort);
+    }
+
+    protected BaseXMLContextRenderer(String location, E context) {
+        super(location, context);
+    }
+
+    protected BaseXMLContextRenderer(String location, E context, boolean sort) {
+        super(location, context, sort);
     }
 
     protected static void renderString(TransformerHandler hd, AttributesImpl atts, final String tagName, final String tagValue) throws SAXException {
@@ -50,7 +57,7 @@ public abstract class BaseXMLContextRenderer<E extends IBaseContext<? extends IB
         }
     }
 
-    protected void process(E context, BufferedWriter out, ProgressContainer progressContainer) throws IOException, ContextRendererException {
+    protected void process(E context, BufferedWriter out) throws IOException, ContextRendererException {
         try {
             StreamResult streamResult = new StreamResult(out);
             SAXTransformerFactory tf = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
@@ -67,7 +74,7 @@ public abstract class BaseXMLContextRenderer<E extends IBaseContext<? extends IB
                 throw new ContextRendererException("Cannot render context without root node");
             }
 
-            renderNode(hd, context.getRoot(), progressContainer);
+            renderNode(hd, context.getRoot());
 
             hd.endElement("", "", "context");
             hd.endDocument();
@@ -77,7 +84,11 @@ public abstract class BaseXMLContextRenderer<E extends IBaseContext<? extends IB
     }
 
     @SuppressWarnings("unchecked")
-    protected void renderNode(TransformerHandler hd, IBaseNode curNode, ProgressContainer progressContainer) throws SAXException {
+    protected void renderNode(TransformerHandler hd, IBaseNode curNode) throws SAXException {
+        if (Thread.currentThread().isInterrupted()) {
+            return;
+        }
+
         // render current node
         IBaseNodeData curNodeData = curNode.getNodeData();
         AttributesImpl atts = new AttributesImpl();
@@ -96,20 +107,20 @@ public abstract class BaseXMLContextRenderer<E extends IBaseContext<? extends IB
             hd.startElement("", "", "children", new AttributesImpl());
             Iterator<IBaseNode> children;
             if (sort) {
-                ArrayList<IBaseNode> childrenList = new ArrayList<IBaseNode>(curNode.getChildrenList());
+                ArrayList<IBaseNode> childrenList = new ArrayList<>(curNode.getChildrenList());
                 Collections.sort(childrenList, Node.NODE_NAME_COMPARATOR);
                 children = childrenList.iterator();
             } else {
                 children = curNode.getChildren();
             }
             while (children.hasNext()) {
-                renderNode(hd, children.next(), progressContainer);
+                renderNode(hd, children.next());
             }
             hd.endElement("", "", "children");
         }
 
         hd.endElement("", "", "node");
-        progressContainer.progress();
+        progress();
     }
 
     protected void renderNodeContents(IBaseNode curNode, TransformerHandler hd) throws SAXException {

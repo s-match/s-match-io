@@ -1,12 +1,9 @@
 package it.unitn.disi.smatch.renderers.mapping;
 
-import it.unitn.disi.smatch.SMatchConstants;
 import it.unitn.disi.smatch.data.mappings.IContextMapping;
 import it.unitn.disi.smatch.data.mappings.IMappingElement;
 import it.unitn.disi.smatch.data.trees.INode;
 import it.unitn.disi.smatch.loaders.ILoader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -17,9 +14,7 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 import java.io.BufferedWriter;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 
 /**
  * Renders the mapping in the AlignAPI mapping format.
@@ -31,9 +26,7 @@ import java.io.OutputStreamWriter;
  *
  * @author <a rel="author" href="http://autayeu.com/">Aliaksandr Autayeu</a>
  */
-public class AlignAPIMappingRenderer implements IMappingRenderer {
-
-    private static final Logger log = LoggerFactory.getLogger(PlainMappingRenderer.class);
+public class AlignAPIMappingRenderer extends BaseFileMappingRenderer implements IMappingRenderer {
 
     private final String onto1URI;
     private final String onto2URI;
@@ -44,23 +37,24 @@ public class AlignAPIMappingRenderer implements IMappingRenderer {
     private final static String MEASURE = "1.0";
 
     public AlignAPIMappingRenderer(String onto1URI, String onto2URI, String onto1Location, String onto2Location) {
+        super(null, null);
         this.onto1URI = onto1URI;
         this.onto2URI = onto2URI;
         this.onto1Location = onto1Location;
         this.onto2Location = onto2Location;
     }
 
-    public void render(IContextMapping<INode> mapping, String outputFile) throws MappingRendererException {
-        try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), "UTF-8"))) {
-            int lg = 0;
-            int mg = 0;
-            int eq = 0;
-            int dj = 0;
+    public AlignAPIMappingRenderer(String location, IContextMapping<INode> mapping, String onto1URI, String onto2URI, String onto1Location, String onto2Location) {
+        super(location, mapping);
+        this.onto1URI = onto1URI;
+        this.onto2URI = onto2URI;
+        this.onto1Location = onto1Location;
+        this.onto2Location = onto2Location;
+    }
 
-            long counter = 0;
-            long total = mapping.size();
-            long reportInt = (total / 20) + 1;//i.e. report every 5%
-
+    @Override
+    protected void process(IContextMapping<INode> mapping, BufferedWriter out) throws IOException, MappingRendererException {
+        try {
             StreamResult streamResult = new StreamResult(out);
             SAXTransformerFactory tf = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
             TransformerHandler hd = tf.newTransformerHandler();
@@ -93,6 +87,10 @@ public class AlignAPIMappingRenderer implements IMappingRenderer {
             renderOntology(hd, "2", onto2URI, onto2Location);
 
             for (IMappingElement<INode> mappingElement : mapping) {
+                if (Thread.currentThread().isInterrupted()) {
+                    break;
+                }
+
                 hd.startElement("", "", "map", new AttributesImpl());
                 hd.startElement("", "", "Cell", new AttributesImpl());
 
@@ -120,46 +118,13 @@ public class AlignAPIMappingRenderer implements IMappingRenderer {
                 hd.endElement("", "", "Cell");
                 hd.endElement("", "", "map");
 
-
-                switch (relation) {
-                    case IMappingElement.LESS_GENERAL: {
-                        lg++;
-                        break;
-                    }
-                    case IMappingElement.MORE_GENERAL: {
-                        mg++;
-                        break;
-                    }
-                    case IMappingElement.EQUIVALENCE: {
-                        eq++;
-                        break;
-                    }
-                    case IMappingElement.DISJOINT: {
-                        dj++;
-                        break;
-                    }
-                    default:
-                        break;
-                }
-
-                counter++;
-                if ((SMatchConstants.LARGE_TASK < total) && (0 == (counter % reportInt)) && log.isInfoEnabled()) {
-                    log.info(100 * counter / total + "%");
-                }
+                progress();
             }//for
 
             hd.endElement("", "", "Alignment");
             hd.endElement("", "", "rdf:RDF");
             hd.endDocument();
-
-            if (log.isInfoEnabled()) {
-                log.info("rendered links: " + mapping.size());
-                log.info("LG: " + lg);
-                log.info("MG: " + mg);
-                log.info("EQ: " + eq);
-                log.info("DJ: " + dj);
-            }
-        } catch (IOException | SAXException | TransformerConfigurationException e) {
+        } catch (SAXException | TransformerConfigurationException e) {
             throw new MappingRendererException(e.getClass().getSimpleName() + ": " + e.getMessage(), e);
         }
     }

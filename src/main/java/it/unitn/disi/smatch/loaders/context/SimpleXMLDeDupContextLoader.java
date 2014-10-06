@@ -1,6 +1,5 @@
 package it.unitn.disi.smatch.loaders.context;
 
-import it.unitn.disi.smatch.SMatchConstants;
 import it.unitn.disi.smatch.data.trees.IContext;
 import it.unitn.disi.smatch.data.trees.INode;
 import it.unitn.disi.smatch.data.trees.Node;
@@ -24,10 +23,6 @@ public class SimpleXMLDeDupContextLoader extends SimpleXMLContextLoader {
 
     private static final Logger log = LoggerFactory.getLogger(SimpleXMLDeDupContextLoader.class);
 
-    private long counter;
-    private long total;
-    private long reportInt;
-
     public SimpleXMLDeDupContextLoader(ILinguisticOracle linguisticOracle) throws ContextLoaderException {
         super(linguisticOracle);
     }
@@ -40,19 +35,18 @@ public class SimpleXMLDeDupContextLoader extends SimpleXMLContextLoader {
     protected IContext process(BufferedReader input) throws IOException, ContextLoaderException {
         IContext result = super.process(input);
 
-        {
+        if (null != result) {
             log.info("Checking sibling duplicates...");
             //checking for duplicates among siblings
             int duplicatesRemoved = 0;
-
-            counter = 0;
-            total = result.getNodesList().size();
-            reportInt = (total / 20) + 1;//i.e. report every 5%
 
             ArrayList<INode> nodeQ = new ArrayList<>();
             nodeQ.add(result.getRoot());
             INode curNode;
             while (!nodeQ.isEmpty()) {
+                if (Thread.currentThread().isInterrupted()) {
+                    return null;
+                }
                 curNode = nodeQ.remove(0);
                 if (null == curNode) {
                     //go up
@@ -62,7 +56,7 @@ public class SimpleXMLDeDupContextLoader extends SimpleXMLContextLoader {
                     int idx = 1;
                     while (idx < children.size()) {
                         if (children.get(idx - 1).getNodeData().getName().equals(children.get(idx).getNodeData().getName())) {
-                            log.info("Found duplicate:\t" + children.get(idx).getNodeData().getName());
+                            log.info("Found duplicate: " + children.get(idx).getNodeData().getName());
                             moveChildren(children.get(idx), children.get(idx - 1));
                             curNode.removeChild(children.get(idx));
                             children.remove(idx);
@@ -71,7 +65,8 @@ public class SimpleXMLDeDupContextLoader extends SimpleXMLContextLoader {
                             idx++;
                         }
                     }
-                    reportProgress();
+
+                    progress();
 
                     if (curNode.getChildCount() > 0) {
                         //go down
@@ -85,7 +80,7 @@ public class SimpleXMLDeDupContextLoader extends SimpleXMLContextLoader {
                 }
             }
 
-            log.info("Duplicates removed:\t" + duplicatesRemoved);
+            log.info("Duplicates removed: " + duplicatesRemoved);
         }
 
         return result;
@@ -109,12 +104,4 @@ public class SimpleXMLDeDupContextLoader extends SimpleXMLContextLoader {
             }
         }
     }
-
-    protected void reportProgress() {
-        counter++;
-        if ((SMatchConstants.LARGE_TASK < total) && (0 == (counter % reportInt)) && log.isInfoEnabled()) {
-            log.info(100 * counter / total + "%");
-        }
-    }
-
 }

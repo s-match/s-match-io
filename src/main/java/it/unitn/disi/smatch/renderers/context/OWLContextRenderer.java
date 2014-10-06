@@ -1,10 +1,10 @@
 package it.unitn.disi.smatch.renderers.context;
 
+import it.unitn.disi.smatch.async.AsyncTask;
 import it.unitn.disi.smatch.data.trees.IContext;
 import it.unitn.disi.smatch.data.trees.INode;
 import it.unitn.disi.smatch.data.trees.INodeData;
 import it.unitn.disi.smatch.data.trees.Node;
-import it.unitn.disi.smatch.data.util.ProgressContainer;
 import it.unitn.disi.smatch.loaders.ILoader;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -31,7 +31,7 @@ import java.util.Iterator;
  *
  * @author <a rel="author" href="http://autayeu.com/">Aliaksandr Autayeu</a>
  */
-public class OWLContextRenderer extends BaseXMLContextRenderer<IContext> {
+public class OWLContextRenderer extends BaseXMLContextRenderer<IContext, INode> implements IAsyncBaseContextRenderer<IContext, INode> {
 
     private final String datasetURI;
 
@@ -40,13 +40,23 @@ public class OWLContextRenderer extends BaseXMLContextRenderer<IContext> {
         this.datasetURI = datasetURI;
     }
 
-    public OWLContextRenderer(boolean sort, String datasetURI) {
+    public OWLContextRenderer(String datasetURI, boolean sort) {
         super(sort);
         this.datasetURI = datasetURI;
     }
 
+    public OWLContextRenderer(String datasetURI, String location, IContext context) {
+        super(location, context);
+        this.datasetURI = datasetURI;
+    }
+
+    public OWLContextRenderer(String datasetURI, String location, IContext context, boolean sort) {
+        super(location, context, sort);
+        this.datasetURI = datasetURI;
+    }
+
     @Override
-    protected void process(IContext context, BufferedWriter out, ProgressContainer progressContainer) throws IOException, ContextRendererException {
+    protected void process(IContext context, BufferedWriter out) throws IOException, ContextRendererException {
         try {
             StreamResult streamResult = new StreamResult(out);
             SAXTransformerFactory tf = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
@@ -86,7 +96,7 @@ public class OWLContextRenderer extends BaseXMLContextRenderer<IContext> {
             renderString(hd, new AttributesImpl(), "dc:creator", "S-Match");
             hd.endElement("", "", "owl:Ontology");
 
-            renderNode(hd, context.getRoot(), progressContainer);
+            renderNode(hd, context.getRoot());
 
             hd.endElement("", "", "rdf:RDF");
             hd.endDocument();
@@ -95,7 +105,11 @@ public class OWLContextRenderer extends BaseXMLContextRenderer<IContext> {
         }
     }
 
-    private void renderNode(TransformerHandler hd, INode curNode, ProgressContainer progressContainer) throws SAXException {
+    private void renderNode(TransformerHandler hd, INode curNode) throws SAXException {
+        if (Thread.currentThread().isInterrupted()) {
+            return;
+        }
+
         // render current node
         INodeData curNodeData = curNode.getNodeData();
         AttributesImpl atts = new AttributesImpl();
@@ -121,14 +135,19 @@ public class OWLContextRenderer extends BaseXMLContextRenderer<IContext> {
                 children = curNode.getChildren();
             }
             while (children.hasNext()) {
-                renderNode(hd, children.next(), progressContainer);
+                renderNode(hd, children.next());
             }
         }
 
-        progressContainer.progress();
+        progress();
     }
 
     public String getDescription() {
         return ILoader.OWL_FILES;
+    }
+
+    @Override
+    public AsyncTask<Void, INode> asyncRender(IContext context, String location) {
+        return new OWLContextRenderer(datasetURI, location, context, sort);
     }
 }

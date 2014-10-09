@@ -11,7 +11,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import javax.xml.transform.sax.TransformerHandler;
-import java.util.Iterator;
 
 /**
  * Renders a context into an XML file.
@@ -39,23 +38,22 @@ public class SimpleXMLContextRenderer extends BaseXMLContextRenderer<IContext, I
     }
 
     protected void renderNodeAttributes(IBaseNode curNode, AttributesImpl atts) {
-        INodeData curNodeData = ((INode) curNode).getNodeData();
+        INodeData curNodeData = ((INode) curNode).nodeData();
         if (curNodeData.getIsPreprocessed()) {
             atts.addAttribute("", "", "preprocessed", "CDATA", preprocessedFlag);
         }
     }
 
     protected void renderNodeContents(IBaseNode curNode, TransformerHandler hd) throws SAXException {
-        INodeData curNodeData = ((INode) curNode).getNodeData();
-        renderString(hd, new AttributesImpl(), "label-formula", curNodeData.getcLabFormula());
-        renderString(hd, new AttributesImpl(), "node-formula", curNodeData.getcNodeFormula());
+        INodeData curNodeData = ((INode) curNode).nodeData();
+        renderString(hd, new AttributesImpl(), "label-formula", curNodeData.getLabelFormula());
+        renderString(hd, new AttributesImpl(), "node-formula", curNodeData.getNodeFormula());
         renderString(hd, new AttributesImpl(), "provenance", curNodeData.getProvenance());
 
         // senses
-        if (0 < curNodeData.getACoLCount()) {
+        if (!curNodeData.getConcepts().isEmpty()) {
             hd.startElement("", "", "tokens", new AttributesImpl());
-            for (Iterator<IAtomicConceptOfLabel> it = curNodeData.getACoLs(); it.hasNext(); ) {
-                IAtomicConceptOfLabel acol = it.next();
+            for (IAtomicConceptOfLabel acol : curNodeData.getConcepts()) {
                 AttributesImpl atts = new AttributesImpl();
                 atts.addAttribute("", "", "id", "CDATA", Integer.toString(acol.getId()));
                 hd.startElement("", "", "token", atts);
@@ -64,8 +62,7 @@ public class SimpleXMLContextRenderer extends BaseXMLContextRenderer<IContext, I
                 renderString(hd, new AttributesImpl(), "lemma", acol.getLemma());
 
                 hd.startElement("", "", "senses", new AttributesImpl());
-                for (Iterator<ISense> i = acol.getSenses(); i.hasNext(); ) {
-                    ISense sense = i.next();
+                for (ISense sense : acol.getSenses()) {
                     atts = new AttributesImpl();
                     atts.addAttribute("", "", "id", "CDATA", sense.getId());
                     hd.startElement("", "", "sense", atts);

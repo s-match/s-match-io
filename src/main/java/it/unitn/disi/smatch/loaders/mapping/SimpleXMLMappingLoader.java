@@ -192,9 +192,9 @@ public class SimpleXMLMappingLoader extends BaseFileMappingLoader implements IAs
         HashMap<String, INode> result = new HashMap<>();
 
         int nodeCount = 0;
-        for (Iterator<INode> i = context.getNodes(); i.hasNext(); ) {
+        for (Iterator<INode> i = context.nodeIterator(); i.hasNext(); ) {
             INode node = i.next();
-            result.put(node.getNodeData().getId(), node);
+            result.put(node.nodeData().getId(), node);
             nodeCount++;
         }
 

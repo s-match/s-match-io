@@ -95,12 +95,12 @@ public class AlignAPIMappingRenderer extends BaseFileMappingRenderer implements 
                 hd.startElement("", "", "Cell", new AttributesImpl());
 
                 atts = new AttributesImpl();
-                atts.addAttribute("", "", "rdf:resource", "CDATA", onto1URI + "#" + mappingElement.getSource().getNodeData().getId());
+                atts.addAttribute("", "", "rdf:resource", "CDATA", onto1URI + "#" + mappingElement.getSource().nodeData().getId());
                 hd.startElement("", "", "entity1", atts);
                 hd.endElement("", "", "entity1");
                 atts = new AttributesImpl();
 
-                atts.addAttribute("", "", "rdf:resource", "CDATA", onto2URI + "#" + mappingElement.getTarget().getNodeData().getId());
+                atts.addAttribute("", "", "rdf:resource", "CDATA", onto2URI + "#" + mappingElement.getTarget().nodeData().getId());
                 hd.startElement("", "", "entity2", atts);
                 hd.endElement("", "", "entity2");
                 char relation = mappingElement.getRelation();

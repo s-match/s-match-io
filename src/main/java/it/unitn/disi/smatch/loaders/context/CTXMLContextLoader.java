@@ -83,7 +83,7 @@ public class CTXMLContextLoader extends BaseXMLContextLoader<IContext, INode> im
                 }
                 break;
             case "sense":
-                sense = node.getNodeData().createACoL();
+                sense = node.nodeData().createConcept();
                 break;
             case "extension":
                 String parentName = atts.getValue("base");
@@ -103,10 +103,10 @@ public class CTXMLContextLoader extends BaseXMLContextLoader<IContext, INode> im
         if (0 < content.length()) {
             switch (localName) {
                 case "logicalFormulaRepresentation":
-                    node.getNodeData().setcNodeFormula(content.toString().trim());
+                    node.nodeData().setNodeFormula(content.toString().trim());
                     break;
                 case "cLabFormula":
-                    node.getNodeData().setcLabFormula(content.toString().trim());
+                    node.nodeData().setLabelFormula(content.toString().trim());
                     break;
                 case "idToken":
                     sense.setId(Integer.parseInt(content.toString()));
@@ -120,12 +120,12 @@ public class CTXMLContextLoader extends BaseXMLContextLoader<IContext, INode> im
                 case "wSenses":
                     if (-1 < content.indexOf("#") && null != oracle) {
                         String[] senses = content.toString().trim().split(" ");
-                        for (String s : senses) {
-                            try {
-                                sense.addSense(oracle.createSense(s));
-                            } catch (LinguisticOracleException e) {
-                                throw new RuntimeException(e.getMessage(), e);
+                        try {
+                            for (String s : senses) {
+                                    sense.getSenses().add(oracle.createSense(s));
                             }
+                        } catch (LinguisticOracleException e) {
+                            throw new RuntimeException(e.getMessage(), e);
                         }
                     }
                     break;
@@ -133,7 +133,7 @@ public class CTXMLContextLoader extends BaseXMLContextLoader<IContext, INode> im
             content = new StringBuilder();
         }
         if ("sense".equals(localName)) {
-            node.getNodeData().addACoL(sense);
+            node.nodeData().getConcepts().add(sense);
         }
     }
 
@@ -149,7 +149,7 @@ public class CTXMLContextLoader extends BaseXMLContextLoader<IContext, INode> im
 
     private INode findRoot() {
         for (INode node : nodes.values()) {
-            if (!node.hasParent() && !BASE_NODE.equals(node.getNodeData().getName())) {
+            if (!node.hasParent() && !BASE_NODE.equals(node.nodeData().getName())) {
                 return node;
             }
         }
@@ -158,7 +158,7 @@ public class CTXMLContextLoader extends BaseXMLContextLoader<IContext, INode> im
 
     private void setNodeUniqueName(INode node, String nodeName) {
         StringTokenizer idName = new StringTokenizer(nodeName, "$");
-        node.getNodeData().setName(idName.nextToken());
-        node.getNodeData().setId(idName.nextToken());
+        node.nodeData().setName(idName.nextToken());
+        node.nodeData().setId(idName.nextToken());
     }
 }

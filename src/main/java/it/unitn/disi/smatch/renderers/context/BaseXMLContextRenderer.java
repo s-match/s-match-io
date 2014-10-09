@@ -90,11 +90,11 @@ public abstract class BaseXMLContextRenderer<E extends IBaseContext<T>, T extend
         }
 
         // render current node
-        IBaseNodeData curNodeData = curNode.getNodeData();
+        IBaseNodeData curNodeData = curNode.nodeData();
         AttributesImpl atts = new AttributesImpl();
         atts.addAttribute("", "", "id", "CDATA", curNodeData.getId());
         if (curNode.hasParent()) {
-            atts.addAttribute("", "", "parent-id", "CDATA", curNode.getParent().getNodeData().getId());
+            atts.addAttribute("", "", "parent-id", "CDATA", curNode.getParent().nodeData().getId());
         }
         renderNodeAttributes(curNode, atts);
         hd.startElement("", "", "node", atts);
@@ -107,11 +107,11 @@ public abstract class BaseXMLContextRenderer<E extends IBaseContext<T>, T extend
             hd.startElement("", "", "children", new AttributesImpl());
             Iterator<IBaseNode> children;
             if (sort) {
-                ArrayList<IBaseNode> childrenList = new ArrayList<>(curNode.getChildrenList());
+                ArrayList<IBaseNode> childrenList = new ArrayList<>(curNode.getChildren());
                 Collections.sort(childrenList, Node.NODE_NAME_COMPARATOR);
                 children = childrenList.iterator();
             } else {
-                children = curNode.getChildren();
+                children = curNode.childrenIterator();
             }
             while (children.hasNext()) {
                 renderNode(hd, children.next());

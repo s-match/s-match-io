@@ -51,12 +51,12 @@ public class SimpleXMLDeDupContextLoader extends SimpleXMLContextLoader {
                 if (null == curNode) {
                     //go up
                 } else {
-                    List<INode> children = new ArrayList<>(curNode.getChildrenList());
+                    List<INode> children = new ArrayList<>(curNode.getChildren());
                     Collections.sort(children, Node.NODE_NAME_COMPARATOR);
                     int idx = 1;
                     while (idx < children.size()) {
-                        if (children.get(idx - 1).getNodeData().getName().equals(children.get(idx).getNodeData().getName())) {
-                            log.info("Found duplicate: " + children.get(idx).getNodeData().getName());
+                        if (children.get(idx - 1).nodeData().getName().equals(children.get(idx).nodeData().getName())) {
+                            log.info("Found duplicate: " + children.get(idx).nodeData().getName());
                             moveChildren(children.get(idx), children.get(idx - 1));
                             curNode.removeChild(children.get(idx));
                             children.remove(idx);
@@ -72,7 +72,7 @@ public class SimpleXMLDeDupContextLoader extends SimpleXMLContextLoader {
                         //go down
                         nodeQ.add(0, null);
                         //adding to the top of the queue
-                        List<INode> childList = curNode.getChildrenList();
+                        List<INode> childList = curNode.getChildren();
                         for (int i = childList.size() - 1; i >= 0; i--) {
                             nodeQ.add(0, childList.get(i));
                         }
@@ -93,7 +93,7 @@ public class SimpleXMLDeDupContextLoader extends SimpleXMLContextLoader {
      * @param target target node
      */
     private void moveChildren(INode source, INode target) {
-        List<INode> children = new ArrayList<>(source.getChildrenList());
+        List<INode> children = new ArrayList<>(source.getChildren());
         while (0 < children.size()) {
             INode child = children.remove(0);
             int idx = target.getChildIndex(child);

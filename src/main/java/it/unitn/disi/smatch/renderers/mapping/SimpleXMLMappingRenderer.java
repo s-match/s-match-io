@@ -62,8 +62,8 @@ public class SimpleXMLMappingRenderer extends BaseFileMappingRenderer implements
                     break;
                 }
 
-                String sourceConceptId = mappingElement.getSource().getNodeData().getId();
-                String targetConceptId = mappingElement.getTarget().getNodeData().getId();
+                String sourceConceptId = mappingElement.getSource().nodeData().getId();
+                String targetConceptId = mappingElement.getTarget().nodeData().getId();
                 if (null != sourceConceptId && 0 < sourceConceptId.length() && null != targetConceptId && 0 < targetConceptId.length()) {
 
                     char relation = mappingElement.getRelation();

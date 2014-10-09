@@ -111,14 +111,14 @@ public class OWLContextRenderer extends BaseXMLContextRenderer<IContext, INode> 
         }
 
         // render current node
-        INodeData curNodeData = curNode.getNodeData();
+        INodeData curNodeData = curNode.nodeData();
         AttributesImpl atts = new AttributesImpl();
         atts.addAttribute("", "", "rdf:about", "CDATA", "#" + curNodeData.getId());
         hd.startElement("", "", "owl:Class", atts);
         renderString(hd, atts, "rdfs:label", curNodeData.getName());
         if (curNode.hasParent()) {
             atts = new AttributesImpl();
-            atts.addAttribute("", "", "rdf:resource", "CDATA", "#" + curNode.getParent().getNodeData().getId());
+            atts.addAttribute("", "", "rdf:resource", "CDATA", "#" + curNode.getParent().nodeData().getId());
             hd.startElement("", "", "rdfs:subClassOf", atts);
             hd.endElement("", "", "rdfs:subClassOf");
         }
@@ -128,11 +128,11 @@ public class OWLContextRenderer extends BaseXMLContextRenderer<IContext, INode> 
         if (0 < curNode.getChildCount()) {
             Iterator<INode> children;
             if (sort) {
-                ArrayList<INode> childrenList = new ArrayList<>(curNode.getChildrenList());
+                ArrayList<INode> childrenList = new ArrayList<>(curNode.getChildren());
                 Collections.sort(childrenList, Node.NODE_NAME_COMPARATOR);
                 children = childrenList.iterator();
             } else {
-                children = curNode.getChildren();
+                children = curNode.childrenIterator();
             }
             while (children.hasNext()) {
                 renderNode(hd, children.next());

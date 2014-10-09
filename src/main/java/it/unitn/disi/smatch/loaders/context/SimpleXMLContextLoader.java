@@ -76,28 +76,24 @@ public class SimpleXMLContextLoader extends BaseXMLContextLoader<IContext, INode
                         node = newRoot.createChild();
                     }
                 }
-                node.getNodeData().setId(atts.getValue("id"));
-                node.getNodeData().setIsPreprocessed(-1 < atts.getIndex("", "preprocessed"));
+                node.nodeData().setId(atts.getValue("id"));
+                node.nodeData().setIsPreprocessed(-1 < atts.getIndex("", "preprocessed"));
                 pathToRoot.addLast(node);
                 break;
             case "token":
-                acol = pathToRoot.getLast().getNodeData().createACoL();
+                acol = pathToRoot.getLast().nodeData().createConcept();
                 acol.setId(Integer.parseInt(atts.getValue("id")));
                 break;
             case "sense":
                 if (null != oracle) {
-                    if (-1 == atts.getIndex("pos")) {
-                        try {
-                            acol.addSense(oracle.createSense(atts.getValue("id")));
-                        } catch (LinguisticOracleException e) {
-                            throw new RuntimeException(e.getMessage(), e);
+                    try {
+                        if (-1 == atts.getIndex("pos")) {
+                                acol.getSenses().add(oracle.createSense(atts.getValue("id")));
+                        } else {
+                                acol.getSenses().add(oracle.createSense(atts.getValue("pos") + "#" + atts.getValue("id")));
                         }
-                    } else {
-                        try {
-                            acol.addSense(oracle.createSense(atts.getValue("pos") + "#" + atts.getValue("id")));
-                        } catch (LinguisticOracleException e) {
-                            throw new RuntimeException(e.getMessage(), e);
-                        }
+                    } catch (LinguisticOracleException e) {
+                        throw new RuntimeException(e.getMessage(), e);
                     }
                 }
                 break;
@@ -112,16 +108,16 @@ public class SimpleXMLContextLoader extends BaseXMLContextLoader<IContext, INode
         super.endElement(uri, localName, qName);
         switch (localName) {
             case "name":
-                pathToRoot.getLast().getNodeData().setName(makeUnique(content.toString()));
+                pathToRoot.getLast().nodeData().setName(makeUnique(content.toString()));
                 break;
             case "label-formula":
-                pathToRoot.getLast().getNodeData().setcLabFormula(content.toString());
+                pathToRoot.getLast().nodeData().setLabelFormula(content.toString());
                 break;
             case "node-formula":
-                pathToRoot.getLast().getNodeData().setcNodeFormula(content.toString());
+                pathToRoot.getLast().nodeData().setNodeFormula(content.toString());
                 break;
             case "provenance":
-                pathToRoot.getLast().getNodeData().setProvenance(content.toString());
+                pathToRoot.getLast().nodeData().setProvenance(content.toString());
                 break;
             case "text":
                 acol.setToken(makeUnique(content.toString()));
@@ -130,7 +126,7 @@ public class SimpleXMLContextLoader extends BaseXMLContextLoader<IContext, INode
                 acol.setLemma(makeUnique(content.toString()));
                 break;
             case "token":
-                pathToRoot.getLast().getNodeData().addACoL(acol);
+                pathToRoot.getLast().nodeData().getConcepts().add(acol);
                 break;
             case "node":
                 pathToRoot.removeLast();
